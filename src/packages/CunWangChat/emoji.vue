@@ -1,8 +1,8 @@
 <template>
     <div class="emojiContainer">
         <div :class="{'emoji':true,showRef:showRef}">
-            <div class="emoji-i" v-for="(item,index) in emoji.emoji" :key="index">
-                <span class="em">{{ item }}</span>
+            <div class="emoji-i" v-for="(item,key) in emoji.emoji" :key="key" @click="select(item,key)">
+                <span class="em">{{ item}}</span>
             </div>
         </div>
         <div class="trigger" @click="toggleStatus">
@@ -18,6 +18,10 @@ import {ref, Ref} from "vue";
 const showRef: Ref<boolean> = ref(false);
 const toggleStatus = () => {
     showRef.value = !showRef.value
+}
+const emits = defineEmits(["select"])
+const select = (select:string,key:string|number)=>{
+  emits("select",select,key)
 }
 </script>
 

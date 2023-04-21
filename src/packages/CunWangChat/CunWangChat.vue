@@ -1,91 +1,174 @@
 <template>
-    <div>
-        <div class="container" draggable="true">
-            <div class="chart">
-                <div v-for="item in props.chatData" :class="item.type">
-                    <img draggable="true" class="avatar" :src="item.avatar" alt="">
-                    <div class="context">
-                        <img class="img"
-                             src="https://th.bing.com/th/id/R.2ee68b020ec90e7bea434af3188ca331?rik=UMNZFdHrcqD%2fKQ&riu=http%3a%2f%2fwx3.sinaimg.cn%2fbmiddle%2f006fbYi5gy1g12aa9s0kuj30c80c8t9s.jpg&ehk=tsaWMWNkDM4SQOG6%2bjyZGAna6IkKzM8dx7anFq381K8%3d&risl=&pid=ImgRaw&r=0"
-                             alt="">
-                        <span class="text">{{ item.text }}</span>
-                    </div>
-                </div>
-            </div>
-            <div class="input">
-                <div class="sendArea">
-                    <i class="iconfont iconbtn icon-send"></i>
-                    <emoji>
-                        <template #ref>
-                            <i class="iconfont iconbtn icon-biaoqing"></i>
-                        </template>
-                    </emoji>
-                    <i class="iconfont iconbtn icon-wenjianjia"></i>
-                </div>
-                <div contenteditable="true" class="editor">
-                </div>
-            </div>
+  <div>
+    <div class="container" draggable="true">
+      <div class="chart" ref="chartRef">
+        <div v-for="item in chatData" :class="item.type">
+          <img draggable="true" class="avatar" :src="item.avatar" alt="" />
+          <div class="context" v-html="item.text"></div>
         </div>
+      </div>
+      <div class="input">
+        <div class="sendArea">
+          <i class="iconfont iconbtn icon-send" @click="emitsSend"></i>
+          <emoji @select="selectEmoji">
+            <template #ref>
+              <i class="iconfont iconbtn icon-biaoqing"></i>
+            </template>
+          </emoji>
+          <i class="iconfont iconbtn icon-wenjianjia" @click="chooseFile"></i>
+        </div>
+        <div contenteditable="true" class="editor" ref="editorRef"></div>
+      </div>
     </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
 import Emoji from "./emoji.vue";
-import {defineProps, withDefaults} from "vue"
-
-type role = "sender" | "receiver"
-
-interface IChatData {
-    text: string,
-    img: string,
-    type: role
-}
+import {
+  defineProps,
+  nextTick,
+  onMounted,
+  ref,
+  watch,
+  withDefaults,
+} from "vue";
+import { IChatData } from "./types";
+import { base642File } from "./utils";
+import { uploadFile } from "./utils";
 
 interface props {
-    chatData: Array<IChatData>
+  chatData: Array<IChatData>;
 }
 
 const props = withDefaults(defineProps<props>(), {
-    chatData() {
-        return [
-            {
-                avatar: "https://th.bing.com/th/id/OIP.3doVapf0YJnzW1K_gjT3yQHaFj?pid=ImgDet&rs=1",
-                text: "兰亭临帖 行书如行云流水",
-                img: "2",
-                type: "sender"
-            },
-            {
-                avatar: "https://th.bing.com/th/id/OIP.3doVapf0YJnzW1K_gjT3yQHaFj?pid=ImgDet&rs=1",
-                text: "月下门推 心细如你脚步碎",
-                img: "2",
-                type: "receiver"
-            },
-            {
-                avatar: "https://th.bing.com/th/id/OIP.3doVapf0YJnzW1K_gjT3yQHaFj?pid=ImgDet&rs=1",
-                text: "忙不迭 千年碑易拓 却难拓你的美",
-                img: "2",
-                type: "receiver"
-            },
-            {
-                avatar: "https://th.bing.com/th/id/OIP.3doVapf0YJnzW1K_gjT3yQHaFj?pid=ImgDet&rs=1",
-                text: "真迹绝 真心能给谁",
-                img: "2",
-                type: "sender"
-            }
-        ]
+  chatData() {
+    return [];
+  },
+});
+const editorRef = ref<HTMLElement | null>(null);
+const chartRef = ref<HTMLElement | null>(null);
+
+onMounted(() => {
+  if (!editorRef.value) return;
+  editorRef.value.addEventListener("paste", handlePaste);
+});
+
+const emits = defineEmits(["send", "paste"]);
+function handlePaste(event: ClipboardEvent) {
+  emits("paste", event);
+}
+const selectEmoji = (select: string, key: string) => {
+  if (editorRef.value) {
+    editorRef.value.innerHTML += ` <emoje emoje="${key}">${select}</emoje> `;
+    console.log(select);
+  }
+};
+// 处理为最终的 innerHTML
+// const renderHandler = ()=>{
+
+// }
+const emitsSend = () => {
+  if (
+    editorRef.value &&
+    chartRef.value &&
+    editorRef.value.innerHTML.replace(/&nbsp;/g, " ").trim().length > 0
+  ) {
+    // 处理表情包
+    // 首先吧全部的span匹配处理出来，然后替换成 key
+    // const regexEmoje = /<emoje.*?>(.*?)<\/emoje>/g;
+    const imgTagReg = /<img.*?src="(.*?)".*?>/g;
+    const imgMatchSrc = /<img.*?src="(.*?)".*?>/;
+    let innerHTML = editorRef.value.innerHTML as string;
+    const matchImgTags = innerHTML.match(imgTagReg) || [];
+    const srcs: Array<Promise<any>> = [];
+    if (matchImgTags.length > 0) {
+      // 有图片就把全部的图片转了文件！
+      for (let i = 0; i < matchImgTags.length; i++) {
+        const b64 = matchImgTags[i].match(imgMatchSrc) || [];
+        if (b64.length > 1) {
+          srcs.push(uploadFile(base642File(b64[1])));
+        }
+      }
+      Promise.all(srcs).then((r) => {
+        r.forEach((v) => {
+          const src = `<img src="http://localhost:8080${v.path}" style="width:100%"/>`;
+          innerHTML = innerHTML.replace(imgTagReg, src);
+          emits("send", innerHTML);
+          resetEditor();
+        });
+      });
+    } else {
+      emits("send", innerHTML);
+      resetEditor();
     }
-})
+  }
+};
+const resetEditor = () => {
+  if (editorRef.value) {
+    editorRef.value.innerHTML = "";
+  }
+};
+// Listen for new chat content and reset the scroll position
+watch(
+  props.chatData,
+  () => {
+    setTimeout(() => {
+      scrollToBottom();
+    }, 300);
+  },
+  {
+    deep: true,
+  }
+);
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (chartRef.value) {
+      chartRef.value.scrollTo({
+        top: chartRef.value.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  });
+};
+const chooseFile = async () => {
+  const options = {
+    types: [
+      {
+        description: "这只是一个描述",
+        accept: {},
+      },
+    ],
+    excludeAcceptAllOption: false, // 有一个选项的按钮
+    multiple: false,
+  };
+  try {
+    const fileIns = await window.showOpenFilePicker(options);
+    const f = await fileIns[0].getFile();
+    const r = await uploadFile(f);
+
+    const a = document.createElement("a");
+    a.href = `http://localhost:8080${r.path}`;
+    a.target = "__blank";
+    a.innerHTML = f.name;
+    a.classList.add("attach")
+    editorRef.value?.appendChild(a);
+  } catch (error) {
+    console.error(error);
+  }
+};
 </script>
 
 <style scoped lang="scss">
 @import "style/iconfont.css";
-
+$shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
+  rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
 .container {
   width: 500px;
   height: calc(100vh - 300px);
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0px 0px 12px #97a8b4;
+  box-shadow: $shadow;
   position: fixed;
   right: 50px;
   bottom: 50px;
@@ -93,10 +176,12 @@ const props = withDefaults(defineProps<props>(), {
   box-sizing: border-box;
 
   .chart {
-    padding: 15px;
     overflow: scroll;
-    height: 100%;
+    height: 70%;
+    padding: 10px;
+    box-sizing: border-box;
     &::-webkit-scrollbar {
+      display: none;
     }
   }
 
@@ -110,7 +195,9 @@ const props = withDefaults(defineProps<props>(), {
     left: 50%;
     transform: translateX(-50%);
     bottom: 0;
-
+    img {
+      width: 100%;
+    }
     .editor {
       flex: 1;
       padding: 0 15px;
@@ -146,27 +233,26 @@ const props = withDefaults(defineProps<props>(), {
   }
 }
 
-.sender, .receiver {
+.sender,
+.receiver {
   display: flex;
   align-items: center;
   width: auto;
   margin: 8px 0;
 
   .context {
-    display: inline-block;
-      width: auto;
+    max-width: 60%;
     background: #eee;
     padding: 10px;
     margin: 0 10px;
     border-radius: 12px;
     .text {
     }
-    .img {
-      width: 30%;
+    img {
       display: block;
+      width: 100%;
     }
   }
-
 
   .avatar {
     width: 50px;
@@ -178,7 +264,11 @@ const props = withDefaults(defineProps<props>(), {
 
 .receiver {
   flex-direction: row-reverse;
-    .context{
-    }
+  .context {
+    flex-direction: row-reverse;
+  }
+}
+a.attach{
+  text-decoration: none;
 }
 </style>
