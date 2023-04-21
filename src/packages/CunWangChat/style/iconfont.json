@@ -1,0 +1,30 @@
+{
+  "id": "4028837",
+  "name": "chat",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "4893191",
+      "name": "文件夹",
+      "font_class": "wenjianjia",
+      "unicode": "ec17",
+      "unicode_decimal": 60439
+    },
+    {
+      "icon_id": "7193672",
+      "name": "表情",
+      "font_class": "biaoqing",
+      "unicode": "e72d",
+      "unicode_decimal": 59181
+    },
+    {
+      "icon_id": "12578950",
+      "name": "send",
+      "font_class": "send",
+      "unicode": "e6ef",
+      "unicode_decimal": 59119
+    }
+  ]
+}
