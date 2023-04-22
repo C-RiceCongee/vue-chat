@@ -164,14 +164,15 @@ const chooseFile = async () => {
 $shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
   rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
 .container {
-  width: 500px;
-  height: calc(100vh - 300px);
+  width: 50vw;
+  height: calc(100vh - 200px);
   background: #fff;
   border-radius: 12px;
   box-shadow: $shadow;
   position: fixed;
-  right: 50px;
-  bottom: 50px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
   overflow: hidden;
   box-sizing: border-box;
 
