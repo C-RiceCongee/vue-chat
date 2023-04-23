@@ -5,7 +5,7 @@ export function uploadFile(file: File) {
         fd.append('file', file)
         axios({
             method: "POST",
-            url: "http://localhost:8080/upload",
+            url: "http://192.168.12.208:8080/upload",
             data: fd
         }).then(r => {
             resolve(r.data)
@@ -27,3 +27,15 @@ export function base642File(base64Data: string) {
     }
     return new File([u8arr], new Date().toISOString() + '.png', { type: mime });
 }
+
+export function formatFileSize(size:number) :string {
+    const KB = 1024;
+    const MB = KB * 1024;
+    if (size < KB) {
+      return size + 'B';
+    } else if (size < MB) {
+      return (size / KB).toFixed(2) + 'KB';
+    } else {
+      return (size / MB).toFixed(2) + 'MB';
+    }
+  }

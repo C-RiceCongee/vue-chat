@@ -34,7 +34,7 @@ import {
   withDefaults,
 } from "vue";
 import { IChatData } from "./types";
-import { base642File } from "./utils";
+import { base642File, formatFileSize } from "./utils";
 import { uploadFile } from "./utils";
 
 interface props {
@@ -92,7 +92,7 @@ const emitsSend = () => {
       }
       Promise.all(srcs).then((r) => {
         r.forEach((v) => {
-          const src = `<img src="http://localhost:8080${v.path}" style="width:100%"/>`;
+          const src = `<img src="http://192.168.12.208:8080${v.path}" style="width:100%"/>`;
           innerHTML = innerHTML.replace(imgTagReg, src);
           emits("send", innerHTML);
           resetEditor();
@@ -143,30 +143,64 @@ const chooseFile = async () => {
     multiple: false,
   };
   try {
-    //@ts-ignore
-    const fileIns = await window.showOpenFilePicker(options);
-    const f = await fileIns[0].getFile();
-    const r:any = await uploadFile(f);
-
-    const a = document.createElement("a");
-    a.href = `http://localhost:8080${r.path}`;
-    a.target = "__blank";
-    a.innerHTML = f.name;
-    a.classList.add("attach");
-    editorRef.value?.appendChild(a);
+    const input = document.createElement("input");
+    input.type = "file";
+    input.style.display = "none";
+    document.body.appendChild(input);
+    input.addEventListener("change", async () => {
+      const flist = input.files || [];
+      if (flist.length < 1) return;
+      const f = flist[0];
+      const fsize = formatFileSize(f.size)
+      const r: any = await uploadFile(f);
+      const a = document.createElement("a");
+      const div = document.createElement("div");
+      const icon = document.createElement("i");
+      const fragment = document.createDocumentFragment();
+      icon.setAttribute("class", "iconfont fileicon iconfont-wenjian");
+      icon.style.marginRight = "6px";
+      a.href = `http://192.168.12.208:8080${r.path}`;
+      a.target = "__blank";
+      a.innerHTML = f.name + `(${fsize})`;
+      a.style.color = "#fff";
+      a.style.textDecoration = "none";
+      a.classList.add("attach");
+      div.appendChild(icon);
+      div.appendChild(a);
+      fragment.appendChild(div);
+      div.style.background = "green";
+      div.style.color = "#eee";
+      div.style.padding = "10px";
+      div.style.borderRadius = "10px";
+      div.style.display = "inline-block";
+      editorRef.value?.appendChild(fragment);
+    });
+    input.click();
+    document.body.removeChild(input);
   } catch (error) {
     console.error(error);
   }
 };
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
+.attach {
+  text-decoration: none !important;
+  display: inline-block;
+  font-size: 12px;
+}
+.fileicon {
+  font-size: 18px;
+}
+.fileicon::before {
+  content: "\ec17";
+}
 @import "style/iconfont.css";
 $shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
   rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
 .container {
   width: 50vw;
-  height: calc(100vh - 200px);
+  height: 60vh;
   background: #fff;
   border-radius: 12px;
   box-shadow: $shadow;
@@ -234,7 +268,11 @@ $shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
     }
   }
 }
-
+@media screen and (max-width: 800px) {
+  .container {
+    width: 90%;
+  }
+}
 .sender,
 .receiver {
   display: flex;
@@ -245,9 +283,9 @@ $shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
   .context {
     max-width: 60%;
     background: #eee;
-    padding: 10px;
+    padding: 3px;
     margin: 0 10px;
-    border-radius: 12px;
+    border-radius: 8px;
     .text {
     }
     img {
@@ -269,8 +307,5 @@ $shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
   .context {
     flex-direction: row-reverse;
   }
-}
-a.attach {
-  text-decoration: none;
 }
 </style>

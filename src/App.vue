@@ -8,7 +8,7 @@
     />
     <div class="user">
       <h2>在线用户{{ users.length }}</h2>
-      
+      <p>选择一个开始聊天！</p>
       <span
         v-for="item in users"
         :key="item.id"
@@ -33,7 +33,7 @@ const currentUser = uid(16);
 const aim = ref<string>("");
 let websocket: WebSocket | null = null;
 const connectWebSocket = () => {
-  websocket = new WebSocket(`ws://localhost:8080/ws?name=${currentUser}`);
+  websocket = new WebSocket(`ws://192.168.12.208:8080/ws?name=${currentUser}`);
   websocket.addEventListener("open", onOpen);
   websocket.addEventListener("message", onMessage);
   // websocket.addEventListener("error", onError);
@@ -46,7 +46,7 @@ function send(message: string) {
     text: message,
     type: "receiver",
   });
-  message+=`#AIMS=${aim.value}=AIME#`
+  message += `#AIMS=${aim.value}=AIME#`;
   console.log(message);
   websocket?.send(message);
 }
@@ -85,7 +85,7 @@ const onMessage = (event: MessageEvent) => {
 const users = ref<Array<any>>([]);
 const getUserList = async () => {
   const r = await axios({
-    url: "http://localhost:8080/users",
+    url: "http://192.168.12.208:8080/users",
     method: "get",
   });
   users.value = r.data;
@@ -133,10 +133,19 @@ getUserList();
 .user {
   display: flex;
   flex-direction: column;
-  width: 200px;
+  width: 180px;
   transition: all ease-in 300ms;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translatex(-50%);
+  &:hover {
+    transform: translatex(10%);
+  }
   span {
     margin: 10px 0;
+    border: 3px dashed #f00;
+    padding: 10px;
   }
 }
 </style>
