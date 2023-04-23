@@ -36,7 +36,7 @@ const connectWebSocket = () => {
   websocket = new WebSocket(`ws://localhost:8080/ws?name=${currentUser}`);
   websocket.addEventListener("open", onOpen);
   websocket.addEventListener("message", onMessage);
-  websocket.addEventListener("error", onError);
+  // websocket.addEventListener("error", onError);
   websocket.addEventListener("close", onClose);
 };
 function send(message: string) {
@@ -51,7 +51,8 @@ function send(message: string) {
   websocket?.send(message);
 }
 
-function paste(event: ClipboardEvent) {
+function paste() {
+  // event: ClipboardEvent
   // navigator.clipboard.read().then(async clipboardItems=>{
   //   for (const clipboardItem of clipboardItems) {
   //   for (const type of clipboardItem.types) {
@@ -89,9 +90,9 @@ const getUserList = async () => {
   });
   users.value = r.data;
 };
-const onError = (event: ErrorEvent) => {
-  console.error("WebSocket error:", event);
-};
+// const onError = (event: ErrorEvent) => {
+//   console.error("WebSocket error:", event);
+// };
 
 const onClose = (event: CloseEvent) => {
   console.log("WebSocket connection closed:", event.code, event.reason);

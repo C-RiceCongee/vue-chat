@@ -143,15 +143,16 @@ const chooseFile = async () => {
     multiple: false,
   };
   try {
+    //@ts-ignore
     const fileIns = await window.showOpenFilePicker(options);
     const f = await fileIns[0].getFile();
-    const r = await uploadFile(f);
+    const r:any = await uploadFile(f);
 
     const a = document.createElement("a");
     a.href = `http://localhost:8080${r.path}`;
     a.target = "__blank";
     a.innerHTML = f.name;
-    a.classList.add("attach")
+    a.classList.add("attach");
     editorRef.value?.appendChild(a);
   } catch (error) {
     console.error(error);
@@ -172,7 +173,7 @@ $shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%,-50%);
+  transform: translate(-50%, -50%);
   overflow: hidden;
   box-sizing: border-box;
 
@@ -269,7 +270,7 @@ $shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
     flex-direction: row-reverse;
   }
 }
-a.attach{
+a.attach {
   text-decoration: none;
 }
 </style>
