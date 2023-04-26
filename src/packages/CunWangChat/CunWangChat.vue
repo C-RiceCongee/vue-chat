@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="container" draggable="true">
+    <div ref="contianerRef" class="container">
       <div class="chart" ref="chartRef">
         <div v-for="item in chatData" :class="item.type">
           <img draggable="true" class="avatar" :src="item.avatar" alt="" />
@@ -36,6 +36,7 @@ import {
 import { IChatData } from "./types";
 import { base642File, formatFileSize } from "./utils";
 import { uploadFile } from "./utils";
+import { TRUE } from "sass";
 
 interface props {
   chatData: Array<IChatData>;
@@ -48,6 +49,7 @@ const props = withDefaults(defineProps<props>(), {
 });
 const editorRef = ref<HTMLElement | null>(null);
 const chartRef = ref<HTMLElement | null>(null);
+const contianerRef = ref<HTMLElement | null>(null);
 
 onMounted(() => {
   if (!editorRef.value) return;
@@ -151,7 +153,7 @@ const chooseFile = async () => {
       const flist = input.files || [];
       if (flist.length < 1) return;
       const f = flist[0];
-      const fsize = formatFileSize(f.size)
+      const fsize = formatFileSize(f.size);
       const r: any = await uploadFile(f);
       const a = document.createElement("a");
       const div = document.createElement("div");
@@ -173,6 +175,7 @@ const chooseFile = async () => {
       div.style.padding = "10px";
       div.style.borderRadius = "10px";
       div.style.display = "inline-block";
+      div.style.maxWidth = "100%";
       editorRef.value?.appendChild(fragment);
     });
     input.click();
@@ -181,6 +184,37 @@ const chooseFile = async () => {
     console.error(error);
   }
 };
+let isDraging = false;
+let startX: number, startY: number, containerX: number, containerY: number;
+const MouseMoveHandler = (e: MouseEvent) => {
+  const c = contianerRef.value;
+  if (!isDraging || !c) return;
+  const deltaX = e.clientX - startX;
+  const deltaY = e.clientY - startY;
+  c.style.left = containerX + deltaX + "px";
+  c.style.top = containerY + deltaY + "px";
+};
+const MouseUpHandler = (e: MouseEvent) => {
+  console.log("起来");
+  isDraging = false;
+  document.body.style.cursor = "default"
+  document.removeEventListener("mousemove", MouseMoveHandler);
+};
+const MouseDownHandler = (e: MouseEvent) => {
+  const c = contianerRef.value;
+  if (!c) return;
+  isDraging = true;
+  document.body.style.cursor = "grab"
+  startX = e.clientX;
+  startY = e.clientY;
+  containerX = c.offsetLeft;
+  containerY = c.offsetTop;
+  document.addEventListener("mousemove", MouseMoveHandler);
+  document.addEventListener("mouseup", MouseUpHandler);
+};
+onMounted(() => {
+  contianerRef.value?.addEventListener("mousedown", MouseDownHandler);
+});
 </script>
 
 <style lang="scss">
@@ -199,7 +233,7 @@ const chooseFile = async () => {
 $shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
   rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
 .container {
-  width: 50vw;
+  width: 30vw;
   height: 60vh;
   background: #fff;
   border-radius: 12px;
@@ -270,7 +304,7 @@ $shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
 }
 @media screen and (max-width: 800px) {
   .container {
-    width: 90%;
+    width: 50%;
   }
 }
 .sender,
